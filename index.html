@@ -197,7 +197,7 @@
     <small>Stored locally on this device only. Get a key at console.anthropic.com → API Keys</small>
   </div>
 
-  <input type="file" id="file-input" accept="image/*" capture="environment" />
+  <input type="file" id="file-input" accept="image/*" />
   <img id="preview" alt="Preview" />
 
   <div id="drop">
@@ -386,12 +386,14 @@ function handleFile(e) {
   const reader = new FileReader();
   reader.onload = ev => {
     const dataUrl = ev.target.result;
+    // Show preview immediately
     $('preview').src = dataUrl;
     $('preview').style.display = 'block';
     $('drop').style.display = 'none';
     $('form').style.display = 'none';
     if (apiKey) {
-      analyzeImage(dataUrl);
+      // Compress before sending to API
+      compressImage(dataUrl, compressed => analyzeImage(compressed));
     } else {
       $('setup').classList.add('show');
       $('form').style.display = 'flex';
@@ -400,6 +402,26 @@ function handleFile(e) {
   };
   reader.readAsDataURL(file);
   e.target.value = '';
+}
+
+// Compress image to max 1200px wide and 0.85 quality JPEG
+function compressImage(dataUrl, callback) {
+  const img = new Image();
+  img.onload = () => {
+    const MAX = 1200;
+    let { width, height } = img;
+    if (width > MAX || height > MAX) {
+      if (width > height) { height = Math.round(height * MAX / width); width = MAX; }
+      else { width = Math.round(width * MAX / height); height = MAX; }
+    }
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0, width, height);
+    callback(canvas.toDataURL('image/jpeg', 0.85));
+  };
+  img.src = dataUrl;
 }
 
 // =================== AI Analysis ===================
