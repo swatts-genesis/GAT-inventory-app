@@ -475,7 +475,9 @@ async function analyzeImage(dataUrl) {
     if (!resp.ok) {
       const err = await resp.text();
       console.error('API error:', resp.status, err);
-      throw new Error(`API ${resp.status}: ${err.slice(0, 100)}`);
+      // Show full error in toast so user can see what's wrong
+      alert(`API Error ${resp.status}:\n\n${err}`);
+      throw new Error(`API ${resp.status}`);
     }
 
     const data = await resp.json();
